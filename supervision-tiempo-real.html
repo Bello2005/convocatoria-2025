@@ -44,8 +44,14 @@
 
         .video-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .video-card {
@@ -90,7 +96,7 @@
     </style>
 </head>
 <body class="bg-gray-50" x-data="{
-    sidebarOpen: true,
+    sidebarOpen: false,
     activeStreams: 8,
     totalViewers: 247,
     recordingActive: true,
@@ -114,17 +120,29 @@
     ]
 }">
 
+    <!-- Mobile Overlay -->
+    <div x-show="sidebarOpen" 
+         @click="sidebarOpen = false"
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"></div>
+
     <!-- Sidebar -->
-    <aside :class="sidebarOpen ? 'w-64' : 'w-20'" class="fixed left-0 top-0 h-full bg-white shadow-xl transition-all duration-300 z-50">
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+           class="fixed left-0 top-0 h-full w-64 bg-white shadow-xl transition-all duration-300 z-50">
         <div class="flex flex-col h-full">
             <div class="p-6 gradient-bg">
                 <div class="flex items-center justify-between">
-                    <div :class="sidebarOpen ? 'block' : 'hidden'" class="text-white">
+                    <div :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="text-white">
                         <h1 class="text-xl font-bold">SuperVision</h1>
-                        <p class="text-xs text-purple-200">Sistema de Monitoreo</p>
+                        <p class="text-xs text-purple-200 hidden lg:block">Sistema de Monitoreo</p>
                     </div>
-                    <button @click="sidebarOpen = !sidebarOpen" class="text-white hover:bg-white/20 p-2 rounded-lg">
-                        <i class="fas fa-bars"></i>
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-white hover:bg-white/20 p-2 rounded-lg">
+                        <i :class="sidebarOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
                     </button>
                 </div>
             </div>
@@ -132,39 +150,39 @@
             <nav class="flex-1 p-4 space-y-2">
                 <a href="index.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
                     <i class="fas fa-chart-line w-6"></i>
-                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Dashboard</span>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Dashboard</span>
                 </a>
 
                 <a href="registro-evidencias.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
                     <i class="fas fa-camera w-6"></i>
-                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Registro de Evidencias</span>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Registro de Evidencias</span>
                 </a>
 
                 <a href="listados.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
                     <i class="fas fa-list-alt w-6"></i>
-                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Listados y Registros</span>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Listados y Registros</span>
                 </a>
 
                 <a href="supervision-tiempo-real.html" class="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white">
                     <i class="fas fa-eye w-6"></i>
-                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Supervisión en Vivo</span>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Supervisión en Vivo</span>
                 </a>
 
                 <a href="eventos-capacitacion.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
                     <i class="fas fa-calendar-check w-6"></i>
-                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Eventos y Capacitación</span>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Eventos y Capacitación</span>
                 </a>
 
                 <hr class="my-4">
 
-                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                <a href="configuracion.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
                     <i class="fas fa-cog w-6"></i>
-                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Configuración</span>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Configuración</span>
                 </a>
 
-                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                <a href="ayuda.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
                     <i class="fas fa-question-circle w-6"></i>
-                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Ayuda</span>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Ayuda</span>
                 </a>
             </nav>
 
@@ -172,7 +190,7 @@
                 <div class="flex items-center space-x-3">
                     <img src="https://ui-avatars.com/api/?name=Admin+User&background=667eea&color=fff"
                          class="w-10 h-10 rounded-full" alt="User">
-                    <div :class="sidebarOpen ? 'block' : 'hidden'">
+                    <div :class="sidebarOpen ? 'block' : 'hidden lg:block'">
                         <p class="text-sm font-semibold text-gray-700">Admin User</p>
                         <p class="text-xs text-gray-500">Supervisor</p>
                     </div>
@@ -182,39 +200,43 @@
     </aside>
 
     <!-- Main Content -->
-    <div :class="sidebarOpen ? 'ml-64' : 'ml-20'" class="transition-all duration-300">
+    <div class="lg:ml-64 transition-all duration-300">
 
         <!-- Top Bar -->
         <header class="bg-white shadow-sm sticky top-0 z-40">
-            <div class="flex items-center justify-between p-6">
-                <div class="flex items-center space-x-4">
+            <div class="flex items-center justify-between p-4 lg:p-6">
+                <div class="flex items-center space-x-3">
+                    <!-- Mobile Menu Button -->
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <i class="fas fa-bars text-gray-600 text-xl"></i>
+                    </button>
                     <div>
-                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-                            Supervisión en Tiempo Real
-                            <span class="ml-3 flex items-center">
-                                <span class="live-indicator w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                                <span class="text-sm font-medium text-red-500">EN VIVO</span>
+                        <h2 class="text-lg lg:text-2xl font-bold text-gray-800 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                            <span>Supervisión en Tiempo Real</span>
+                            <span class="flex items-center">
+                                <span class="live-indicator w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full mr-2"></span>
+                                <span class="text-xs sm:text-sm font-medium text-red-500">EN VIVO</span>
                             </span>
                         </h2>
-                        <p class="text-gray-500 text-sm">Monitoreo activo de <span x-text="activeStreams"></span> transmisiones</p>
+                        <p class="text-gray-500 text-xs lg:text-sm hidden sm:block">Monitoreo activo de <span x-text="activeStreams"></span> transmisiones</p>
                     </div>
                 </div>
 
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-xl">
+                <div class="flex items-center space-x-2 lg:space-x-4">
+                    <div class="hidden sm:flex items-center space-x-2 px-3 lg:px-4 py-2 bg-green-100 text-green-700 rounded-xl">
                         <i class="fas fa-circle text-xs live-indicator"></i>
-                        <span class="font-semibold" x-text="`${totalViewers} espectadores`"></span>
+                        <span class="font-semibold text-xs lg:text-sm" x-text="`${totalViewers} espectadores`"></span>
                     </div>
 
                     <button @click="recordingActive = !recordingActive"
                             :class="recordingActive ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-400 hover:bg-gray-500'"
-                            class="px-4 py-2 text-white rounded-xl transition-all font-medium">
-                        <i class="fas fa-record-vinyl mr-2"></i>
+                            class="px-3 lg:px-4 py-2 text-white rounded-xl transition-all font-medium text-xs lg:text-sm">
+                        <i class="fas fa-record-vinyl mr-1 lg:mr-2"></i>
                         <span x-text="recordingActive ? 'Grabando' : 'Pausado'"></span>
                     </button>
 
                     <button class="relative p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                        <i class="fas fa-bell text-gray-600 text-xl"></i>
+                        <i class="fas fa-bell text-gray-600 text-lg lg:text-xl"></i>
                         <span class="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
                     </button>
                 </div>
@@ -222,7 +244,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="p-6">
+        <main class="p-4 lg:p-6">
 
             <!-- Live Stats -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -294,18 +316,18 @@
 
                 <!-- Video Grid -->
                 <div class="lg:col-span-3">
-                    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-bold text-gray-800">Transmisiones en Vivo</h3>
+                    <div class="bg-white rounded-2xl shadow-lg p-4 lg:p-6 mb-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 lg:mb-6">
+                            <h3 class="text-lg lg:text-xl font-bold text-gray-800">Transmisiones en Vivo</h3>
                             <div class="flex items-center space-x-2">
-                                <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                                <button class="px-3 lg:px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-sm lg:text-base">
                                     <i class="fas fa-th-large"></i>
                                 </button>
-                                <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                                <button class="px-3 lg:px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-sm lg:text-base">
                                     <i class="fas fa-list"></i>
                                 </button>
-                                <button class="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 rounded-xl transition-all">
-                                    <i class="fas fa-expand mr-2"></i>Pantalla Completa
+                                <button class="px-3 lg:px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 rounded-xl transition-all text-xs lg:text-sm">
+                                    <i class="fas fa-expand mr-1 lg:mr-2"></i><span class="hidden sm:inline">Pantalla Completa</span>
                                 </button>
                             </div>
                         </div>
@@ -360,9 +382,9 @@
                     </div>
 
                     <!-- Stream Controls -->
-                    <div class="bg-white rounded-2xl shadow-lg p-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-6">Controles de Transmisión</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-2xl shadow-lg p-4 lg:p-6">
+                        <h3 class="text-lg lg:text-xl font-bold text-gray-800 mb-4 lg:mb-6">Controles de Transmisión</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
                             <button class="p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-center group">
                                 <div class="w-12 h-12 mx-auto bg-purple-100 group-hover:bg-purple-200 rounded-full flex items-center justify-center mb-3">
                                     <i class="fas fa-camera text-purple-600 text-xl"></i>

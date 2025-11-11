@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayuda - Sistema de Supervisión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .faq-item {
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="{
+    sidebarOpen: false,
+    searchQuery: '',
+    activeCategory: 'all',
+    openFaq: null,
+    showSupportModal: false,
+    showChatModal: false,
+    supportForm: {
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+    },
+    chatMessages: [],
+    newMessage: '',
+
+    categories: [
+        { id: 'all', name: 'Todas', icon: 'fa-globe' },
+        { id: 'getting-started', name: 'Primeros Pasos', icon: 'fa-rocket' },
+        { id: 'features', name: 'Funcionalidades', icon: 'fa-star' },
+        { id: 'troubleshooting', name: 'Solución de Problemas', icon: 'fa-tools' },
+        { id: 'account', name: 'Cuenta', icon: 'fa-user' }
+    ],
+
+    faqs: [
+        { id: 1, category: 'getting-started', question: '¿Cómo inicio sesión en el sistema?', answer: 'Para iniciar sesión, utiliza tus credenciales proporcionadas por el administrador. Si olvidaste tu contraseña, puedes usar la opción Recuperar contraseña en la pantalla de login.' },
+        { id: 2, category: 'getting-started', question: '¿Cómo registro mi primera evidencia?', answer: 'Ve a la sección Registro de Evidencias, haz clic en Cargar Evidencias y selecciona los archivos que deseas subir. Completa los campos requeridos y haz clic en Guardar Evidencias.' },
+        { id: 3, category: 'features', question: '¿Cómo creo un nuevo evento de capacitación?', answer: 'En la sección Eventos y Capacitación, haz clic en el botón Nuevo Evento. Completa el formulario con la información del evento y guarda los cambios.' },
+        { id: 4, category: 'features', question: '¿Puedo exportar los registros?', answer: 'Sí, en la sección Listados y Registros puedes seleccionar los registros que deseas exportar y elegir el formato (Excel, PDF, CSV o ZIP).' },
+        { id: 5, category: 'troubleshooting', question: 'No puedo ver las transmisiones en vivo', answer: 'Verifica tu conexión a internet y asegúrate de que las transmisiones estén activas. Si el problema persiste, contacta al soporte técnico.' },
+        { id: 6, category: 'troubleshooting', question: 'Los archivos no se cargan correctamente', answer: 'Verifica que los archivos no excedan el tamaño máximo permitido (50MB) y que sean de los formatos soportados (JPG, PNG, MP4, MOV).' },
+        { id: 7, category: 'account', question: '¿Cómo cambio mi contraseña?', answer: 'Ve a Configuración > Seguridad y haz clic en Cambiar Contraseña. Ingresa tu contraseña actual y la nueva contraseña.' },
+        { id: 8, category: 'account', question: '¿Cómo actualizo mi información de perfil?', answer: 'En la sección Configuración > General, puedes editar tu nombre, correo electrónico y otros datos de perfil.' }
+    ],
+
+    get filteredFaqs() {
+        let filtered = this.faqs;
+
+        if (this.activeCategory !== 'all') {
+            filtered = filtered.filter(faq => faq.category === this.activeCategory);
+        }
+
+        if (this.searchQuery) {
+            filtered = filtered.filter(faq =>
+                faq.question.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                faq.answer.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
+        }
+
+        return filtered;
+    },
+
+    toggleFaq(id) {
+        this.openFaq = this.openFaq === id ? null : id;
+    },
+
+    openSupportModal() {
+        this.showSupportModal = true;
+    },
+
+    closeSupportModal() {
+        this.showSupportModal = false;
+        this.supportForm = { name: '', email: '', subject: '', message: '' };
+    },
+
+    submitSupportForm() {
+        // Simulación de envío
+        alert('¡Mensaje enviado! Nuestro equipo de soporte te responderá pronto.');
+        this.closeSupportModal();
+    },
+
+    openChatModal() {
+        this.showChatModal = true;
+        // Mensaje de bienvenida automático
+        if (this.chatMessages.length === 0) {
+            this.chatMessages.push({
+                id: 1,
+                sender: 'support',
+                message: '¡Hola! ¿En qué puedo ayudarte hoy?',
+                time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+            });
+        }
+    },
+
+    closeChatModal() {
+        this.showChatModal = false;
+    },
+
+    sendChatMessage() {
+        if (this.newMessage.trim()) {
+            this.chatMessages.push({
+                id: this.chatMessages.length + 1,
+                sender: 'user',
+                message: this.newMessage,
+                time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+            });
+            this.newMessage = '';
+            
+            // Simulación de respuesta automática
+            setTimeout(() => {
+                this.chatMessages.push({
+                    id: this.chatMessages.length + 1,
+                    sender: 'support',
+                    message: 'Gracias por tu mensaje. Un agente de soporte se pondrá en contacto contigo pronto.',
+                    time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                });
+            }, 1000);
+        }
+    }
+}">
+
+    <!-- Mobile Overlay -->
+    <div x-show="sidebarOpen" 
+         @click="sidebarOpen = false"
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+           class="fixed left-0 top-0 h-full w-64 bg-white shadow-xl transition-all duration-300 z-50">
+        <div class="flex flex-col h-full">
+            <div class="p-6 gradient-bg">
+                <div class="flex items-center justify-between">
+                    <div :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="text-white">
+                        <h1 class="text-xl font-bold">SuperVision</h1>
+                        <p class="text-xs text-purple-200 hidden lg:block">Sistema de Monitoreo</p>
+                    </div>
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-white hover:bg-white/20 p-2 rounded-lg">
+                        <i :class="sidebarOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="index.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-chart-line w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Dashboard</span>
+                </a>
+
+                <a href="registro-evidencias.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-camera w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Registro de Evidencias</span>
+                </a>
+
+                <a href="listados.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-list-alt w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Listados y Registros</span>
+                </a>
+
+                <a href="supervision-tiempo-real.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-eye w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Supervisión en Vivo</span>
+                </a>
+
+                <a href="eventos-capacitacion.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-calendar-check w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Eventos y Capacitación</span>
+                </a>
+
+                <hr class="my-4">
+
+                <a href="configuracion.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-cog w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Configuración</span>
+                </a>
+
+                <a href="ayuda.html" class="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                    <i class="fas fa-question-circle w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden lg:block'" class="font-medium">Ayuda</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t">
+                <div class="flex items-center space-x-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=667eea&color=fff"
+                         class="w-10 h-10 rounded-full" alt="User">
+                    <div :class="sidebarOpen ? 'block' : 'hidden lg:block'">
+                        <p class="text-sm font-semibold text-gray-700">Admin User</p>
+                        <p class="text-xs text-gray-500">Supervisor</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="lg:ml-64 transition-all duration-300">
+
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="flex items-center justify-between p-4 lg:p-6">
+                <div class="flex items-center space-x-3">
+                    <!-- Mobile Menu Button -->
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <i class="fas fa-bars text-gray-600 text-xl"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-xl lg:text-2xl font-bold text-gray-800">Centro de Ayuda</h2>
+                        <p class="text-gray-500 text-xs lg:text-sm hidden sm:block">Encuentra respuestas y soporte para usar el sistema</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 lg:space-x-4">
+                    <button class="relative p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <i class="fas fa-bell text-gray-600 text-lg lg:text-xl"></i>
+                        <span class="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-4 lg:p-6">
+
+            <!-- Search Bar -->
+            <div class="bg-white rounded-2xl shadow-lg p-4 lg:p-6 mb-6">
+                <div class="relative">
+                    <input type="text" x-model="searchQuery" placeholder="Buscar en la ayuda..."
+                           class="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm lg:text-base">
+                    <i class="fas fa-search absolute left-4 top-5 text-gray-400 text-lg"></i>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6">
+                <a href="#getting-started" @click="activeCategory = 'getting-started'" class="bg-white rounded-2xl shadow-lg p-4 lg:p-6 hover:shadow-xl transition-all text-center group">
+                    <div class="w-16 h-16 mx-auto bg-blue-100 group-hover:bg-blue-200 rounded-full flex items-center justify-center mb-4 transition-colors">
+                        <i class="fas fa-rocket text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Primeros Pasos</h3>
+                    <p class="text-xs lg:text-sm text-gray-500">Guía de inicio rápido</p>
+                </a>
+
+                <a href="#features" @click="activeCategory = 'features'" class="bg-white rounded-2xl shadow-lg p-4 lg:p-6 hover:shadow-xl transition-all text-center group">
+                    <div class="w-16 h-16 mx-auto bg-purple-100 group-hover:bg-purple-200 rounded-full flex items-center justify-center mb-4 transition-colors">
+                        <i class="fas fa-star text-purple-600 text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Funcionalidades</h3>
+                    <p class="text-xs lg:text-sm text-gray-500">Aprende sobre las características</p>
+                </a>
+
+                <a href="#troubleshooting" @click="activeCategory = 'troubleshooting'" class="bg-white rounded-2xl shadow-lg p-4 lg:p-6 hover:shadow-xl transition-all text-center group">
+                    <div class="w-16 h-16 mx-auto bg-orange-100 group-hover:bg-orange-200 rounded-full flex items-center justify-center mb-4 transition-colors">
+                        <i class="fas fa-tools text-orange-600 text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Solución de Problemas</h3>
+                    <p class="text-xs lg:text-sm text-gray-500">Resuelve problemas comunes</p>
+                </a>
+
+                <a href="#account" @click="activeCategory = 'account'" class="bg-white rounded-2xl shadow-lg p-4 lg:p-6 hover:shadow-xl transition-all text-center group">
+                    <div class="w-16 h-16 mx-auto bg-green-100 group-hover:bg-green-200 rounded-full flex items-center justify-center mb-4 transition-colors">
+                        <i class="fas fa-user text-green-600 text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-800 mb-2">Cuenta</h3>
+                    <p class="text-xs lg:text-sm text-gray-500">Gestiona tu cuenta</p>
+                </a>
+            </div>
+
+            <!-- Categories -->
+            <div class="bg-white rounded-2xl shadow-lg p-4 lg:p-6 mb-6">
+                <h3 class="text-lg lg:text-xl font-bold text-gray-800 mb-4">Categorías</h3>
+                <div class="flex flex-wrap gap-2">
+                    <template x-for="category in categories" :key="category.id">
+                        <button @click="activeCategory = category.id"
+                                :class="activeCategory === category.id ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                class="px-4 py-2 rounded-xl font-medium transition-all text-sm lg:text-base">
+                            <i :class="`fas ${category.icon} mr-2`"></i>
+                            <span x-text="category.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- FAQs -->
+            <div class="space-y-4">
+                <h3 class="text-lg lg:text-xl font-bold text-gray-800 mb-4">Preguntas Frecuentes</h3>
+                
+                <template x-for="faq in filteredFaqs" :key="faq.id">
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden faq-item">
+                        <button @click="toggleFaq(faq.id)" class="w-full p-4 lg:p-6 flex items-center justify-between text-left">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800 mb-1 text-sm lg:text-base" x-text="faq.question"></h4>
+                            </div>
+                            <i :class="openFaq === faq.id ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-purple-600 ml-4"></i>
+                        </button>
+                        <div x-show="openFaq === faq.id" 
+                             x-transition:enter="transition ease-out duration-300"
+                             x-transition:enter-start="opacity-0 max-h-0"
+                             x-transition:enter-end="opacity-100 max-h-96"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100 max-h-96"
+                             x-transition:leave-end="opacity-0 max-h-0"
+                             class="px-4 lg:px-6 pb-4 lg:pb-6">
+                            <p class="text-sm lg:text-base text-gray-600" x-text="faq.answer"></p>
+                        </div>
+                    </div>
+                </template>
+
+                <div x-show="filteredFaqs.length === 0" class="bg-white rounded-2xl shadow-lg p-8 lg:p-12 text-center">
+                    <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-xl font-semibold text-gray-600 mb-2">No se encontraron resultados</p>
+                    <p class="text-sm text-gray-500">Intenta con otros términos de búsqueda o selecciona otra categoría</p>
+                </div>
+            </div>
+
+            <!-- Contact Support -->
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 lg:p-8 mt-6 text-white">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h3 class="text-xl lg:text-2xl font-bold mb-2">¿Necesitas más ayuda?</h3>
+                        <p class="text-purple-100 text-sm lg:text-base">Nuestro equipo de soporte está listo para ayudarte</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button @click="openSupportModal()" class="px-6 py-3 bg-white text-purple-600 rounded-xl font-medium hover:bg-purple-50 transition-colors text-sm lg:text-base">
+                            <i class="fas fa-envelope mr-2"></i>Contactar Soporte
+                        </button>
+                        <button @click="openChatModal()" class="px-6 py-3 bg-white/20 text-white rounded-xl font-medium hover:bg-white/30 transition-colors text-sm lg:text-base">
+                            <i class="fas fa-comments mr-2"></i>Chat en Vivo
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Support Modal -->
+    <div x-show="showSupportModal"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="closeSupportModal()">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform scale-90"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-90">
+
+            <div class="sticky top-0 bg-gradient-to-r from-purple-500 to-purple-600 p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-1">Contactar Soporte</h2>
+                        <p class="text-purple-100 text-sm">Completa el formulario y te responderemos pronto</p>
+                    </div>
+                    <button @click="closeSupportModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form @submit.prevent="submitSupportForm()" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nombre</label>
+                        <input type="text" x-model="supportForm.name" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                               placeholder="Tu nombre">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Correo Electrónico</label>
+                        <input type="email" x-model="supportForm.email" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                               placeholder="tu@email.com">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Asunto</label>
+                    <input type="text" x-model="supportForm.subject" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                           placeholder="¿Sobre qué necesitas ayuda?">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Mensaje</label>
+                    <textarea x-model="supportForm.message" required rows="6"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                              placeholder="Describe tu consulta o problema..."></textarea>
+                </div>
+                <div class="flex items-center space-x-3 pt-4">
+                    <button type="submit" class="flex-1 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-paper-plane mr-2"></i>Enviar Mensaje
+                    </button>
+                    <button type="button" @click="closeSupportModal()" class="flex-1 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div x-show="showChatModal"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="closeChatModal()">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full h-[600px] flex flex-col"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform scale-90"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-90">
+
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-6 text-white rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold">Chat en Vivo</h2>
+                            <p class="text-purple-100 text-sm">Soporte en tiempo real</p>
+                        </div>
+                    </div>
+                    <button @click="closeChatModal()" class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+                <template x-for="msg in chatMessages" :key="msg.id">
+                    <div :class="msg.sender === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                        <div :class="msg.sender === 'user' ? 'bg-purple-600 text-white' : 'bg-white text-gray-800'"
+                             class="max-w-[80%] rounded-2xl px-4 py-3 shadow-lg">
+                            <p class="text-sm lg:text-base" x-text="msg.message"></p>
+                            <p :class="msg.sender === 'user' ? 'text-purple-100' : 'text-gray-500'" 
+                               class="text-xs mt-1" x-text="msg.time"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
+                <form @submit.prevent="sendChatMessage()" class="flex items-center space-x-3">
+                    <input type="text" x-model="newMessage" 
+                           placeholder="Escribe tu mensaje..."
+                           class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <button type="submit" 
+                            :disabled="!newMessage.trim()"
+                            :class="newMessage.trim() ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-300 cursor-not-allowed'"
+                            class="px-6 py-3 text-white rounded-xl font-medium transition-colors">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
