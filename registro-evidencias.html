@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Evidencias - Sistema de Supervisión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .upload-area {
+            border: 3px dashed #d1d5db;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background-color: #f3f4f6;
+        }
+
+        .preview-image {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+        }
+
+        .thumbnail {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thumbnail:hover .overlay {
+            opacity: 1;
+        }
+
+        .overlay {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="{
+    sidebarOpen: true,
+    uploadedFiles: [],
+    evidenceType: 'photo',
+    eventId: '',
+    description: '',
+    location: '',
+    showSuccess: false,
+
+    handleFileUpload(files) {
+        for (let file of files) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.uploadedFiles.push({
+                    name: file.name,
+                    size: (file.size / 1024 / 1024).toFixed(2),
+                    type: file.type.includes('video') ? 'video' : 'image',
+                    preview: e.target.result,
+                    date: new Date().toLocaleString('es-ES')
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    },
+
+    removeFile(index) {
+        this.uploadedFiles.splice(index, 1);
+    },
+
+    submitEvidence() {
+        this.showSuccess = true;
+        setTimeout(() => {
+            this.showSuccess = false;
+            this.uploadedFiles = [];
+            this.description = '';
+            this.location = '';
+        }, 3000);
+    }
+}">
+
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'w-64' : 'w-20'" class="fixed left-0 top-0 h-full bg-white shadow-xl transition-all duration-300 z-50">
+        <div class="flex flex-col h-full">
+            <div class="p-6 gradient-bg">
+                <div class="flex items-center justify-between">
+                    <div :class="sidebarOpen ? 'block' : 'hidden'" class="text-white">
+                        <h1 class="text-xl font-bold">SuperVision</h1>
+                        <p class="text-xs text-purple-200">Sistema de Monitoreo</p>
+                    </div>
+                    <button @click="sidebarOpen = !sidebarOpen" class="text-white hover:bg-white/20 p-2 rounded-lg">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="index.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-chart-line w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Dashboard</span>
+                </a>
+
+                <a href="registro-evidencias.html" class="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                    <i class="fas fa-camera w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Registro de Evidencias</span>
+                </a>
+
+                <a href="listados.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-list-alt w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Listados y Registros</span>
+                </a>
+
+                <a href="supervision-tiempo-real.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-eye w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Supervisión en Vivo</span>
+                </a>
+
+                <a href="eventos-capacitacion.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-calendar-check w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Eventos y Capacitación</span>
+                </a>
+
+                <hr class="my-4">
+
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-cog w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Configuración</span>
+                </a>
+
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-question-circle w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Ayuda</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t">
+                <div class="flex items-center space-x-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=667eea&color=fff"
+                         class="w-10 h-10 rounded-full" alt="User">
+                    <div :class="sidebarOpen ? 'block' : 'hidden'">
+                        <p class="text-sm font-semibold text-gray-700">Admin User</p>
+                        <p class="text-xs text-gray-500">Supervisor</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div :class="sidebarOpen ? 'ml-64' : 'ml-20'" class="transition-all duration-300">
+
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="flex items-center justify-between p-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Registro de Evidencias</h2>
+                    <p class="text-gray-500 text-sm">Carga y administra evidencias fotográficas y de video</p>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar..."
+                               class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+
+                    <button class="relative p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <i class="fas fa-bell text-gray-600 text-xl"></i>
+                        <span class="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                    </button>
+
+                    <button class="flex items-center space-x-2 hover:bg-gray-100 rounded-xl p-2 transition-colors">
+                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=667eea&color=fff"
+                             class="w-8 h-8 rounded-full" alt="User">
+                        <i class="fas fa-chevron-down text-gray-400 text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Success Alert -->
+        <div x-show="showSuccess" x-transition class="mx-6 mt-6">
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg flex items-center">
+                <i class="fas fa-check-circle text-2xl mr-4"></i>
+                <div>
+                    <p class="font-bold">Evidencias registradas exitosamente</p>
+                    <p class="text-sm">Tus archivos han sido guardados y procesados correctamente.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="p-6">
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Upload Form -->
+                <div class="lg:col-span-2 space-y-6">
+
+                    <!-- Upload Area -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                            <i class="fas fa-cloud-upload-alt text-purple-600 mr-3"></i>
+                            Cargar Evidencias
+                        </h3>
+
+                        <div class="upload-area rounded-xl p-12 text-center"
+                             @dragover.prevent="$el.classList.add('dragover')"
+                             @dragleave.prevent="$el.classList.remove('dragover')"
+                             @drop.prevent="$el.classList.remove('dragover'); handleFileUpload($event.dataTransfer.files)">
+
+                            <div class="mb-6">
+                                <i class="fas fa-cloud-upload-alt text-6xl text-purple-400 mb-4"></i>
+                                <p class="text-lg font-semibold text-gray-700 mb-2">Arrastra y suelta tus archivos aquí</p>
+                                <p class="text-sm text-gray-500 mb-4">o haz clic para seleccionar</p>
+                            </div>
+
+                            <input type="file" id="fileInput" multiple accept="image/*,video/*" class="hidden"
+                                   @change="handleFileUpload($event.target.files)">
+
+                            <label for="fileInput" class="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl cursor-pointer hover:from-purple-600 hover:to-purple-700 transition-all font-medium">
+                                <i class="fas fa-folder-open mr-2"></i>
+                                Seleccionar Archivos
+                            </label>
+
+                            <p class="text-xs text-gray-400 mt-4">Soporta: JPG, PNG, MP4, MOV (Max 50MB por archivo)</p>
+                        </div>
+                    </div>
+
+                    <!-- Form Details -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                            <i class="fas fa-info-circle text-blue-600 mr-3"></i>
+                            Detalles de la Evidencia
+                        </h3>
+
+                        <div class="space-y-4">
+                            <!-- Event Selection -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-calendar-alt text-purple-600 mr-2"></i>
+                                    Evento Asociado
+                                </label>
+                                <select x-model="eventId" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <option value="">Seleccionar evento...</option>
+                                    <option value="234">Capacitación Tecnológica #234</option>
+                                    <option value="233">Workshop Metodológico #233</option>
+                                    <option value="232">Seminario de Evaluación #232</option>
+                                    <option value="231">Taller Práctico #231</option>
+                                </select>
+                            </div>
+
+                            <!-- Evidence Type -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-tag text-purple-600 mr-2"></i>
+                                    Tipo de Evidencia
+                                </label>
+                                <div class="grid grid-cols-4 gap-3">
+                                    <button @click="evidenceType = 'photo'"
+                                            :class="evidenceType === 'photo' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'"
+                                            class="px-4 py-3 rounded-xl font-medium transition-all hover:shadow-lg">
+                                        <i class="fas fa-camera block mb-1"></i>
+                                        Foto
+                                    </button>
+                                    <button @click="evidenceType = 'video'"
+                                            :class="evidenceType === 'video' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'"
+                                            class="px-4 py-3 rounded-xl font-medium transition-all hover:shadow-lg">
+                                        <i class="fas fa-video block mb-1"></i>
+                                        Video
+                                    </button>
+                                    <button @click="evidenceType = 'document'"
+                                            :class="evidenceType === 'document' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'"
+                                            class="px-4 py-3 rounded-xl font-medium transition-all hover:shadow-lg">
+                                        <i class="fas fa-file-alt block mb-1"></i>
+                                        Documento
+                                    </button>
+                                    <button @click="evidenceType = 'audio'"
+                                            :class="evidenceType === 'audio' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'"
+                                            class="px-4 py-3 rounded-xl font-medium transition-all hover:shadow-lg">
+                                        <i class="fas fa-microphone block mb-1"></i>
+                                        Audio
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Location -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-map-marker-alt text-purple-600 mr-2"></i>
+                                    Ubicación
+                                </label>
+                                <div class="relative">
+                                    <input type="text" x-model="location" placeholder="Ej: Sala de conferencias A, Edificio Principal"
+                                           class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <button class="absolute right-3 top-3 text-purple-600 hover:text-purple-700">
+                                        <i class="fas fa-crosshairs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-align-left text-purple-600 mr-2"></i>
+                                    Descripción
+                                </label>
+                                <textarea x-model="description" rows="4" placeholder="Describe brevemente la evidencia..."
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"></textarea>
+                                <p class="text-xs text-gray-500 mt-2" x-text="`${description.length}/500 caracteres`"></p>
+                            </div>
+
+                            <!-- Tags -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-tags text-purple-600 mr-2"></i>
+                                    Etiquetas
+                                </label>
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center">
+                                        capacitación
+                                        <button class="ml-2 hover:text-blue-900"><i class="fas fa-times text-xs"></i></button>
+                                    </span>
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm flex items-center">
+                                        asistencia
+                                        <button class="ml-2 hover:text-green-900"><i class="fas fa-times text-xs"></i></button>
+                                    </span>
+                                    <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm flex items-center">
+                                        presentación
+                                        <button class="ml-2 hover:text-purple-900"><i class="fas fa-times text-xs"></i></button>
+                                    </span>
+                                </div>
+                                <input type="text" placeholder="Agregar etiqueta... (presiona Enter)"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-between">
+                        <button class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancelar
+                        </button>
+                        <button @click="submitEvidence()"
+                                :disabled="uploadedFiles.length === 0"
+                                :class="uploadedFiles.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'"
+                                class="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-medium transition-all">
+                            <i class="fas fa-save mr-2"></i>
+                            Guardar Evidencias
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Preview & Info -->
+                <div class="space-y-6">
+
+                    <!-- Upload Progress -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-tasks text-green-600 mr-2"></i>
+                            Archivos Cargados
+                            <span class="ml-auto text-sm text-purple-600" x-text="`${uploadedFiles.length} archivo(s)`"></span>
+                        </h3>
+
+                        <div x-show="uploadedFiles.length === 0" class="text-center py-8">
+                            <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-sm text-gray-500">No hay archivos cargados</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <template x-for="(file, index) in uploadedFiles" :key="index">
+                                <div class="border border-gray-200 rounded-xl p-3 hover:border-purple-300 transition-all">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                            <img :src="file.preview" x-show="file.type === 'image'" class="w-full h-full object-cover">
+                                            <div x-show="file.type === 'video'" class="w-full h-full flex items-center justify-center bg-purple-100">
+                                                <i class="fas fa-video text-purple-600 text-xl"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-gray-800 truncate" x-text="file.name"></p>
+                                            <p class="text-xs text-gray-500" x-text="`${file.size} MB`"></p>
+                                            <div class="mt-2 bg-gray-200 rounded-full h-1.5">
+                                                <div class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                                            </div>
+                                        </div>
+                                        <button @click="removeFile(index)" class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Quick Info -->
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
+                        <h3 class="text-lg font-bold mb-4 flex items-center">
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            Consejos Rápidos
+                        </h3>
+                        <ul class="space-y-3 text-sm">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle mt-1 mr-2 flex-shrink-0"></i>
+                                <span>Asegúrate de que las imágenes sean claras y legibles</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle mt-1 mr-2 flex-shrink-0"></i>
+                                <span>Los videos no deben exceder 50MB</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle mt-1 mr-2 flex-shrink-0"></i>
+                                <span>Usa etiquetas para facilitar la búsqueda</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle mt-1 mr-2 flex-shrink-0"></i>
+                                <span>Asocia siempre la evidencia a un evento</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Recent Uploads -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Últimas Evidencias</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-image text-blue-600"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-800 truncate">foto_evento_234.jpg</p>
+                                    <p class="text-xs text-gray-500">Hace 5 minutos</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-video text-purple-600"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-800 truncate">video_asistencia.mp4</p>
+                                    <p class="text-xs text-gray-500">Hace 15 minutos</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-image text-green-600"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-800 truncate">registro_233.jpg</p>
+                                    <p class="text-xs text-gray-500">Hace 1 hora</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+</html>

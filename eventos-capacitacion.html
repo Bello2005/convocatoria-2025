@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos y Capacitación - Sistema de Supervisión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .event-card {
+            transition: all 0.3s ease;
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-day:hover {
+            background-color: #f3f4f6;
+        }
+
+        .calendar-day.has-event {
+            position: relative;
+        }
+
+        .calendar-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #667eea;
+        }
+
+        .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="{
+    sidebarOpen: true,
+    showEventModal: false,
+    viewMode: 'grid',
+    filterStatus: 'all',
+    searchQuery: '',
+    selectedEvent: null,
+
+    events: [
+        {
+            id: 234,
+            title: 'Capacitación Tecnológica Avanzada',
+            type: 'Capacitación',
+            date: '2025-11-12',
+            time: '14:30 - 18:00',
+            location: 'Sala Principal',
+            instructor: 'Dr. Carlos Rodríguez',
+            participants: 45,
+            maxParticipants: 50,
+            status: 'Programado',
+            description: 'Capacitación enfocada en nuevas tecnologías y metodologías de desarrollo.',
+            color: 'blue'
+        },
+        {
+            id: 233,
+            title: 'Workshop Metodológico',
+            type: 'Workshop',
+            date: '2025-11-10',
+            time: '10:00 - 13:00',
+            location: 'Sala A',
+            instructor: 'Lic. María González',
+            participants: 32,
+            maxParticipants: 35,
+            status: 'En curso',
+            description: 'Taller práctico sobre metodologías ágiles y gestión de proyectos.',
+            color: 'purple'
+        },
+        {
+            id: 232,
+            title: 'Seminario de Evaluación',
+            type: 'Seminario',
+            date: '2025-11-09',
+            time: '16:00 - 19:00',
+            location: 'Auditorio',
+            instructor: 'Mg. Ana Martínez',
+            participants: 28,
+            maxParticipants: 30,
+            status: 'Completado',
+            description: 'Seminario sobre técnicas y herramientas de evaluación educativa.',
+            color: 'green'
+        },
+        {
+            id: 231,
+            title: 'Taller Práctico de Innovación',
+            type: 'Taller',
+            date: '2025-11-15',
+            time: '09:00 - 12:00',
+            location: 'Laboratorio 1',
+            instructor: 'Ing. Roberto Silva',
+            participants: 20,
+            maxParticipants: 25,
+            status: 'Programado',
+            description: 'Taller hands-on sobre innovación y creatividad aplicada.',
+            color: 'orange'
+        },
+        {
+            id: 230,
+            title: 'Conferencia Magistral',
+            type: 'Conferencia',
+            date: '2025-11-08',
+            time: '15:00 - 17:00',
+            location: 'Auditorio Principal',
+            instructor: 'Dr. Luis Fernández',
+            participants: 89,
+            maxParticipants: 100,
+            status: 'Completado',
+            description: 'Conferencia sobre tendencias futuras en educación y tecnología.',
+            color: 'indigo'
+        },
+        {
+            id: 229,
+            title: 'Webinar Internacional',
+            type: 'Webinar',
+            date: '2025-11-20',
+            time: '18:00 - 20:00',
+            location: 'Virtual',
+            instructor: 'PhD. Sarah Johnson',
+            participants: 0,
+            maxParticipants: 200,
+            status: 'Programado',
+            description: 'Webinar internacional sobre mejores prácticas en educación digital.',
+            color: 'pink'
+        }
+    ],
+
+    get filteredEvents() {
+        let filtered = this.events;
+
+        if (this.filterStatus !== 'all') {
+            filtered = filtered.filter(e => e.status === this.filterStatus);
+        }
+
+        if (this.searchQuery) {
+            filtered = filtered.filter(e =>
+                e.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                e.instructor.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                e.type.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
+        }
+
+        return filtered;
+    },
+
+    openEventModal(event = null) {
+        this.selectedEvent = event;
+        this.showEventModal = true;
+    }
+}">
+
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'w-64' : 'w-20'" class="fixed left-0 top-0 h-full bg-white shadow-xl transition-all duration-300 z-50">
+        <div class="flex flex-col h-full">
+            <div class="p-6 gradient-bg">
+                <div class="flex items-center justify-between">
+                    <div :class="sidebarOpen ? 'block' : 'hidden'" class="text-white">
+                        <h1 class="text-xl font-bold">SuperVision</h1>
+                        <p class="text-xs text-purple-200">Sistema de Monitoreo</p>
+                    </div>
+                    <button @click="sidebarOpen = !sidebarOpen" class="text-white hover:bg-white/20 p-2 rounded-lg">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="index.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-chart-line w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Dashboard</span>
+                </a>
+
+                <a href="registro-evidencias.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-camera w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Registro de Evidencias</span>
+                </a>
+
+                <a href="listados.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-list-alt w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Listados y Registros</span>
+                </a>
+
+                <a href="supervision-tiempo-real.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-eye w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Supervisión en Vivo</span>
+                </a>
+
+                <a href="eventos-capacitacion.html" class="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                    <i class="fas fa-calendar-check w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Eventos y Capacitación</span>
+                </a>
+
+                <hr class="my-4">
+
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-cog w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Configuración</span>
+                </a>
+
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-question-circle w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Ayuda</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t">
+                <div class="flex items-center space-x-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=667eea&color=fff"
+                         class="w-10 h-10 rounded-full" alt="User">
+                    <div :class="sidebarOpen ? 'block' : 'hidden'">
+                        <p class="text-sm font-semibold text-gray-700">Admin User</p>
+                        <p class="text-xs text-gray-500">Supervisor</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div :class="sidebarOpen ? 'ml-64' : 'ml-20'" class="transition-all duration-300">
+
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="flex items-center justify-between p-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Eventos y Capacitación</h2>
+                    <p class="text-gray-500 text-sm">Gestiona y monitorea eventos de capacitación y procesos formativos</p>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar eventos..." x-model="searchQuery"
+                               class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+
+                    <button @click="openEventModal()" class="px-6 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all">
+                        <i class="fas fa-plus mr-2"></i>Nuevo Evento
+                    </button>
+
+                    <button class="relative p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <i class="fas fa-bell text-gray-600 text-xl"></i>
+                        <span class="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-6">
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">Total Eventos</p>
+                            <p class="text-3xl font-bold text-gray-800" x-text="events.length"></p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl">
+                            <i class="fas fa-calendar-alt text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">En Curso</p>
+                            <p class="text-3xl font-bold text-gray-800" x-text="events.filter(e => e.status === 'En curso').length"></p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-br from-green-400 to-green-500 rounded-xl">
+                            <i class="fas fa-play-circle text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">Programados</p>
+                            <p class="text-3xl font-bold text-gray-800" x-text="events.filter(e => e.status === 'Programado').length"></p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl">
+                            <i class="fas fa-clock text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">Participantes</p>
+                            <p class="text-3xl font-bold text-gray-800" x-text="events.reduce((sum, e) => sum + e.participants, 0)"></p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl">
+                            <i class="fas fa-users text-white text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Events List -->
+                <div class="lg:col-span-2 space-y-6">
+
+                    <!-- Filters -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div class="flex flex-wrap gap-2">
+                                <button @click="filterStatus = 'all'"
+                                        :class="filterStatus === 'all' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                        class="px-4 py-2 rounded-xl font-medium transition-all">
+                                    Todos
+                                </button>
+                                <button @click="filterStatus = 'Programado'"
+                                        :class="filterStatus === 'Programado' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                        class="px-4 py-2 rounded-xl font-medium transition-all">
+                                    Programados
+                                </button>
+                                <button @click="filterStatus = 'En curso'"
+                                        :class="filterStatus === 'En curso' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                        class="px-4 py-2 rounded-xl font-medium transition-all">
+                                    En Curso
+                                </button>
+                                <button @click="filterStatus = 'Completado'"
+                                        :class="filterStatus === 'Completado' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                        class="px-4 py-2 rounded-xl font-medium transition-all">
+                                    Completados
+                                </button>
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                <button @click="viewMode = 'grid'"
+                                        :class="viewMode === 'grid' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'"
+                                        class="p-2 rounded-lg transition-all">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                                <button @click="viewMode = 'list'"
+                                        :class="viewMode === 'list' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'"
+                                        class="p-2 rounded-lg transition-all">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Events Grid/List -->
+                    <div x-show="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <template x-for="event in filteredEvents" :key="event.id">
+                            <div class="event-card bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer"
+                                 @click="openEventModal(event)">
+                                <!-- Header -->
+                                <div class="p-6 bg-gradient-to-br"
+                                     :class="{
+                                         'from-blue-500 to-blue-600': event.color === 'blue',
+                                         'from-purple-500 to-purple-600': event.color === 'purple',
+                                         'from-green-500 to-green-600': event.color === 'green',
+                                         'from-orange-500 to-orange-600': event.color === 'orange',
+                                         'from-indigo-500 to-indigo-600': event.color === 'indigo',
+                                         'from-pink-500 to-pink-600': event.color === 'pink'
+                                     }">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <span class="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-lg text-xs font-semibold" x-text="event.type"></span>
+                                        <span class="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-lg text-xs font-semibold" x-text="event.status"></span>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-white mb-2" x-text="event.title"></h3>
+                                    <p class="text-white/90 text-sm" x-text="event.description"></p>
+                                </div>
+
+                                <!-- Content -->
+                                <div class="p-6 space-y-3">
+                                    <div class="flex items-center text-gray-600 text-sm">
+                                        <i class="fas fa-calendar w-5 text-purple-600"></i>
+                                        <span x-text="event.date"></span>
+                                    </div>
+                                    <div class="flex items-center text-gray-600 text-sm">
+                                        <i class="fas fa-clock w-5 text-purple-600"></i>
+                                        <span x-text="event.time"></span>
+                                    </div>
+                                    <div class="flex items-center text-gray-600 text-sm">
+                                        <i class="fas fa-map-marker-alt w-5 text-purple-600"></i>
+                                        <span x-text="event.location"></span>
+                                    </div>
+                                    <div class="flex items-center text-gray-600 text-sm">
+                                        <i class="fas fa-user-tie w-5 text-purple-600"></i>
+                                        <span x-text="event.instructor"></span>
+                                    </div>
+
+                                    <!-- Progress Bar -->
+                                    <div class="pt-3">
+                                        <div class="flex items-center justify-between text-sm mb-2">
+                                            <span class="text-gray-600">Participantes</span>
+                                            <span class="font-semibold text-gray-800">
+                                                <span x-text="event.participants"></span>/<span x-text="event.maxParticipants"></span>
+                                            </span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-purple-600 h-2 rounded-full transition-all"
+                                                 :style="`width: ${(event.participants / event.maxParticipants) * 100}%`"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Footer -->
+                                <div class="px-6 pb-6 flex items-center justify-between">
+                                    <button class="text-purple-600 hover:text-purple-700 font-medium text-sm">
+                                        Ver detalles <i class="fas fa-arrow-right ml-1"></i>
+                                    </button>
+                                    <div class="flex items-center space-x-2">
+                                        <button class="p-2 hover:bg-purple-50 text-purple-600 rounded-lg transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="p-2 hover:bg-purple-50 text-purple-600 rounded-lg transition-colors">
+                                            <i class="fas fa-share-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- List View -->
+                    <div x-show="viewMode === 'list'" class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                        <template x-for="event in filteredEvents" :key="event.id">
+                            <div class="p-6 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                                 @click="openEventModal(event)">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-3 mb-2">
+                                            <h3 class="text-lg font-bold text-gray-800" x-text="event.title"></h3>
+                                            <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                                                  :class="{
+                                                      'bg-green-100 text-green-700': event.status === 'En curso',
+                                                      'bg-blue-100 text-blue-700': event.status === 'Programado',
+                                                      'bg-gray-100 text-gray-700': event.status === 'Completado'
+                                                  }"
+                                                  x-text="event.status"></span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-3" x-text="event.description"></p>
+                                        <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+                                            <span><i class="fas fa-calendar text-purple-600 mr-1"></i><span x-text="event.date"></span></span>
+                                            <span><i class="fas fa-clock text-purple-600 mr-1"></i><span x-text="event.time"></span></span>
+                                            <span><i class="fas fa-map-marker-alt text-purple-600 mr-1"></i><span x-text="event.location"></span></span>
+                                            <span><i class="fas fa-user-tie text-purple-600 mr-1"></i><span x-text="event.instructor"></span></span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-6 text-right">
+                                        <div class="text-2xl font-bold text-purple-600 mb-1">
+                                            <span x-text="event.participants"></span>/<span x-text="event.maxParticipants"></span>
+                                        </div>
+                                        <p class="text-xs text-gray-500">Participantes</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-6">
+
+                    <!-- Mini Calendar -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">
+                            <span><i class="fas fa-calendar-alt text-purple-600 mr-2"></i>Noviembre 2025</span>
+                            <div class="flex items-center space-x-2">
+                                <button class="p-1 hover:bg-gray-100 rounded"><i class="fas fa-chevron-left text-sm"></i></button>
+                                <button class="p-1 hover:bg-gray-100 rounded"><i class="fas fa-chevron-right text-sm"></i></button>
+                            </div>
+                        </h3>
+
+                        <div class="calendar-grid text-center text-xs mb-2">
+                            <div class="font-semibold text-gray-600">Dom</div>
+                            <div class="font-semibold text-gray-600">Lun</div>
+                            <div class="font-semibold text-gray-600">Mar</div>
+                            <div class="font-semibold text-gray-600">Mié</div>
+                            <div class="font-semibold text-gray-600">Jue</div>
+                            <div class="font-semibold text-gray-600">Vie</div>
+                            <div class="font-semibold text-gray-600">Sáb</div>
+                        </div>
+
+                        <div class="calendar-grid text-sm">
+                            <template x-for="day in 30" :key="day">
+                                <div class="calendar-day text-gray-700 font-medium"
+                                     :class="[8, 9, 10, 12, 15, 20].includes(day) ? 'has-event bg-purple-50 text-purple-700' : ''"
+                                     x-text="day"></div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Events -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">
+                            <i class="fas fa-bell text-orange-600 mr-2"></i>Próximos Eventos
+                        </h3>
+
+                        <div class="space-y-3">
+                            <template x-for="event in events.filter(e => e.status === 'Programado').slice(0, 3)" :key="event.id">
+                                <div class="p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                                             :class="`bg-${event.color}-100`">
+                                            <i class="fas fa-calendar-day text-xl"
+                                               :class="`text-${event.color}-600`"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-gray-800 truncate" x-text="event.title"></p>
+                                            <p class="text-xs text-gray-500" x-text="event.date + ' • ' + event.time"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
+                        <h3 class="text-lg font-bold mb-4">
+                            <i class="fas fa-bolt mr-2"></i>Acciones Rápidas
+                        </h3>
+
+                        <div class="space-y-3">
+                            <button class="w-full p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all text-left flex items-center">
+                                <i class="fas fa-file-export mr-3"></i>
+                                <span class="font-medium">Exportar calendario</span>
+                            </button>
+                            <button class="w-full p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all text-left flex items-center">
+                                <i class="fas fa-users mr-3"></i>
+                                <span class="font-medium">Ver participantes</span>
+                            </button>
+                            <button class="w-full p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all text-left flex items-center">
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                <span class="font-medium">Generar reporte</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Event Modal -->
+    <div x-show="showEventModal"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/50 modal-backdrop flex items-center justify-center z-50 p-4"
+         @click.self="showEventModal = false">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform scale-90"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-90">
+
+            <div class="sticky top-0 bg-gradient-to-r from-purple-500 to-purple-600 p-8 text-white">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold mb-2" x-text="selectedEvent ? selectedEvent.title : 'Nuevo Evento'"></h2>
+                        <p class="text-purple-100" x-text="selectedEvent ? selectedEvent.description : 'Crea un nuevo evento de capacitación'"></p>
+                    </div>
+                    <button @click="showEventModal = false" class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <template x-if="selectedEvent">
+                    <div class="space-y-6">
+                        <!-- Event Details -->
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo de Evento</label>
+                                <div class="p-3 bg-purple-50 rounded-xl">
+                                    <span class="text-purple-700 font-medium" x-text="selectedEvent.type"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
+                                <div class="p-3 rounded-xl"
+                                     :class="{
+                                         'bg-green-50': selectedEvent.status === 'En curso',
+                                         'bg-blue-50': selectedEvent.status === 'Programado',
+                                         'bg-gray-50': selectedEvent.status === 'Completado'
+                                     }">
+                                    <span class="font-medium"
+                                          :class="{
+                                              'text-green-700': selectedEvent.status === 'En curso',
+                                              'text-blue-700': selectedEvent.status === 'Programado',
+                                              'text-gray-700': selectedEvent.status === 'Completado'
+                                          }"
+                                          x-text="selectedEvent.status"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-calendar text-purple-600 mr-2"></i>Fecha
+                                </label>
+                                <div class="p-3 bg-gray-50 rounded-xl">
+                                    <span class="text-gray-700 font-medium" x-text="selectedEvent.date"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-clock text-purple-600 mr-2"></i>Horario
+                                </label>
+                                <div class="p-3 bg-gray-50 rounded-xl">
+                                    <span class="text-gray-700 font-medium" x-text="selectedEvent.time"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-map-marker-alt text-purple-600 mr-2"></i>Ubicación
+                            </label>
+                            <div class="p-3 bg-gray-50 rounded-xl">
+                                <span class="text-gray-700 font-medium" x-text="selectedEvent.location"></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-user-tie text-purple-600 mr-2"></i>Instructor
+                            </label>
+                            <div class="p-3 bg-gray-50 rounded-xl flex items-center space-x-3">
+                                <img :src="`https://ui-avatars.com/api/?name=${selectedEvent.instructor}&background=667eea&color=fff`"
+                                     class="w-10 h-10 rounded-full">
+                                <span class="text-gray-700 font-medium" x-text="selectedEvent.instructor"></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-users text-purple-600 mr-2"></i>Participantes
+                            </label>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl font-bold text-gray-800">
+                                    <span x-text="selectedEvent.participants"></span>/<span x-text="selectedEvent.maxParticipants"></span>
+                                </span>
+                                <span class="text-sm text-gray-600">
+                                    <span x-text="Math.round((selectedEvent.participants / selectedEvent.maxParticipants) * 100)"></span>% ocupado
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div class="bg-purple-600 h-3 rounded-full transition-all"
+                                     :style="`width: ${(selectedEvent.participants / selectedEvent.maxParticipants) * 100}%`"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-3 pt-4">
+                            <button class="flex-1 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-edit mr-2"></i>Editar Evento
+                            </button>
+                            <button class="flex-1 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-share-alt mr-2"></i>Compartir
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Create Event Form -->
+                <template x-if="!selectedEvent">
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Título del Evento</label>
+                            <input type="text" placeholder="Ej: Capacitación Tecnológica"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Descripción</label>
+                            <textarea rows="3" placeholder="Describe el evento..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tipo</label>
+                                <select class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option>Capacitación</option>
+                                    <option>Workshop</option>
+                                    <option>Seminario</option>
+                                    <option>Taller</option>
+                                    <option>Conferencia</option>
+                                    <option>Webinar</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha</label>
+                                <input type="date"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Hora Inicio</label>
+                                <input type="time"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Hora Fin</label>
+                                <input type="time"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Ubicación</label>
+                            <input type="text" placeholder="Ej: Sala Principal"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Instructor</label>
+                            <input type="text" placeholder="Nombre del instructor"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Capacidad Máxima</label>
+                            <input type="number" placeholder="50"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+
+                        <div class="flex items-center space-x-3 pt-4">
+                            <button type="submit" class="flex-1 py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-save mr-2"></i>Crear Evento
+                            </button>
+                            <button type="button" @click="showEventModal = false" class="flex-1 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </template>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

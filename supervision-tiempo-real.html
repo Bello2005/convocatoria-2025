@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisión en Tiempo Real - Sistema de Supervisión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 0.5;
+            }
+        }
+
+        .live-indicator {
+            animation: live-blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes live-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .video-card {
+            position: relative;
+            background: #1a1a1a;
+            border-radius: 1rem;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+        }
+
+        .video-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 1rem;
+        }
+
+        .activity-timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 14px;
+            top: 8px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #667eea;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="{
+    sidebarOpen: true,
+    activeStreams: 8,
+    totalViewers: 247,
+    recordingActive: true,
+    selectedStream: null,
+    streams: [
+        { id: 1, name: 'Sala Principal', viewers: 45, status: 'live', event: 'Capacitación #234', quality: 'HD' },
+        { id: 2, name: 'Sala A', viewers: 32, status: 'live', event: 'Workshop #233', quality: 'HD' },
+        { id: 3, name: 'Sala B', viewers: 28, status: 'live', event: 'Seminario #232', quality: 'FHD' },
+        { id: 4, name: 'Auditorio', viewers: 67, status: 'live', event: 'Conferencia #230', quality: 'FHD' },
+        { id: 5, name: 'Laboratorio 1', viewers: 15, status: 'live', event: 'Taller #231', quality: 'HD' },
+        { id: 6, name: 'Laboratorio 2', viewers: 22, status: 'live', event: 'Práctica #229', quality: 'HD' },
+        { id: 7, name: 'Sala Virtual 1', viewers: 18, status: 'live', event: 'Webinar #228', quality: 'HD' },
+        { id: 8, name: 'Sala Virtual 2', viewers: 20, status: 'live', event: 'Online #227', quality: 'FHD' }
+    ],
+    activities: [
+        { type: 'join', user: 'María González', location: 'Sala Principal', time: 'Hace 2 min' },
+        { type: 'record', user: 'Sistema', location: 'Sala A', time: 'Hace 5 min' },
+        { type: 'leave', user: 'Carlos Ruiz', location: 'Sala B', time: 'Hace 8 min' },
+        { type: 'alert', user: 'Sistema', location: 'Auditorio', time: 'Hace 12 min' },
+        { type: 'join', user: 'Ana Martínez', location: 'Laboratorio 1', time: 'Hace 15 min' }
+    ]
+}">
+
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'w-64' : 'w-20'" class="fixed left-0 top-0 h-full bg-white shadow-xl transition-all duration-300 z-50">
+        <div class="flex flex-col h-full">
+            <div class="p-6 gradient-bg">
+                <div class="flex items-center justify-between">
+                    <div :class="sidebarOpen ? 'block' : 'hidden'" class="text-white">
+                        <h1 class="text-xl font-bold">SuperVision</h1>
+                        <p class="text-xs text-purple-200">Sistema de Monitoreo</p>
+                    </div>
+                    <button @click="sidebarOpen = !sidebarOpen" class="text-white hover:bg-white/20 p-2 rounded-lg">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="index.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-chart-line w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Dashboard</span>
+                </a>
+
+                <a href="registro-evidencias.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-camera w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Registro de Evidencias</span>
+                </a>
+
+                <a href="listados.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-list-alt w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Listados y Registros</span>
+                </a>
+
+                <a href="supervision-tiempo-real.html" class="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                    <i class="fas fa-eye w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Supervisión en Vivo</span>
+                </a>
+
+                <a href="eventos-capacitacion.html" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-calendar-check w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Eventos y Capacitación</span>
+                </a>
+
+                <hr class="my-4">
+
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-cog w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Configuración</span>
+                </a>
+
+                <a href="#" class="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors">
+                    <i class="fas fa-question-circle w-6"></i>
+                    <span :class="sidebarOpen ? 'block' : 'hidden'" class="font-medium">Ayuda</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t">
+                <div class="flex items-center space-x-3">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=667eea&color=fff"
+                         class="w-10 h-10 rounded-full" alt="User">
+                    <div :class="sidebarOpen ? 'block' : 'hidden'">
+                        <p class="text-sm font-semibold text-gray-700">Admin User</p>
+                        <p class="text-xs text-gray-500">Supervisor</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div :class="sidebarOpen ? 'ml-64' : 'ml-20'" class="transition-all duration-300">
+
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="flex items-center justify-between p-6">
+                <div class="flex items-center space-x-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            Supervisión en Tiempo Real
+                            <span class="ml-3 flex items-center">
+                                <span class="live-indicator w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                <span class="text-sm font-medium text-red-500">EN VIVO</span>
+                            </span>
+                        </h2>
+                        <p class="text-gray-500 text-sm">Monitoreo activo de <span x-text="activeStreams"></span> transmisiones</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-xl">
+                        <i class="fas fa-circle text-xs live-indicator"></i>
+                        <span class="font-semibold" x-text="`${totalViewers} espectadores`"></span>
+                    </div>
+
+                    <button @click="recordingActive = !recordingActive"
+                            :class="recordingActive ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-400 hover:bg-gray-500'"
+                            class="px-4 py-2 text-white rounded-xl transition-all font-medium">
+                        <i class="fas fa-record-vinyl mr-2"></i>
+                        <span x-text="recordingActive ? 'Grabando' : 'Pausado'"></span>
+                    </button>
+
+                    <button class="relative p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <i class="fas fa-bell text-gray-600 text-xl"></i>
+                        <span class="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-6">
+
+            <!-- Live Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">Transmisiones Activas</p>
+                            <p class="text-3xl font-bold text-gray-800" x-text="activeStreams"></p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-br from-green-400 to-green-500 rounded-xl">
+                            <i class="fas fa-broadcast-tower text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center text-xs text-green-600">
+                        <span class="live-indicator w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Todas operativas
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">Total Espectadores</p>
+                            <p class="text-3xl font-bold text-gray-800" x-text="totalViewers"></p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl">
+                            <i class="fas fa-users text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center text-xs text-blue-600">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        +12% desde ayer
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">Tiempo de Grabación</p>
+                            <p class="text-3xl font-bold text-gray-800">4:32:15</p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl">
+                            <i class="fas fa-clock text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center text-xs text-purple-600">
+                        <i class="fas fa-circle live-indicator mr-1"></i>
+                        En curso
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">Almacenamiento</p>
+                            <p class="text-3xl font-bold text-gray-800">127 GB</p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl">
+                            <i class="fas fa-hdd text-white text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-orange-500 h-2 rounded-full" style="width: 65%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+                <!-- Video Grid -->
+                <div class="lg:col-span-3">
+                    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold text-gray-800">Transmisiones en Vivo</h3>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                                <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                <button class="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 rounded-xl transition-all">
+                                    <i class="fas fa-expand mr-2"></i>Pantalla Completa
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="video-grid">
+                            <template x-for="stream in streams" :key="stream.id">
+                                <div class="video-card group cursor-pointer" @click="selectedStream = stream">
+                                    <!-- Placeholder video background -->
+                                    <div class="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <i class="fas fa-video text-6xl text-gray-600 mb-3"></i>
+                                            <p class="text-gray-400 text-sm" x-text="stream.name"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Live indicator -->
+                                    <div class="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white rounded-lg text-xs font-bold flex items-center">
+                                        <span class="live-indicator w-2 h-2 bg-white rounded-full mr-2"></span>
+                                        EN VIVO
+                                    </div>
+
+                                    <!-- Quality badge -->
+                                    <div class="absolute top-3 right-3 px-2 py-1 bg-black/70 text-white rounded text-xs font-semibold" x-text="stream.quality"></div>
+
+                                    <!-- Overlay -->
+                                    <div class="video-overlay opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <h4 class="text-white font-semibold mb-1" x-text="stream.name"></h4>
+                                                <p class="text-gray-300 text-sm" x-text="stream.event"></p>
+                                            </div>
+                                            <div class="flex items-center space-x-2 text-white">
+                                                <i class="fas fa-eye text-sm"></i>
+                                                <span class="text-sm font-medium" x-text="stream.viewers"></span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 flex items-center space-x-2">
+                                            <button class="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+                                                <i class="fas fa-expand text-white"></i>
+                                            </button>
+                                            <button class="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+                                                <i class="fas fa-volume-up text-white"></i>
+                                            </button>
+                                            <button class="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+                                                <i class="fas fa-cog text-white"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Stream Controls -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Controles de Transmisión</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <button class="p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-center group">
+                                <div class="w-12 h-12 mx-auto bg-purple-100 group-hover:bg-purple-200 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fas fa-camera text-purple-600 text-xl"></i>
+                                </div>
+                                <p class="font-semibold text-gray-800 text-sm">Capturar</p>
+                                <p class="text-xs text-gray-500">Tomar foto</p>
+                            </button>
+
+                            <button class="p-4 border-2 border-gray-200 rounded-xl hover:border-red-500 hover:bg-red-50 transition-all text-center group">
+                                <div class="w-12 h-12 mx-auto bg-red-100 group-hover:bg-red-200 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fas fa-record-vinyl text-red-600 text-xl"></i>
+                                </div>
+                                <p class="font-semibold text-gray-800 text-sm">Grabar</p>
+                                <p class="text-xs text-gray-500">Iniciar/Pausar</p>
+                            </button>
+
+                            <button class="p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-center group">
+                                <div class="w-12 h-12 mx-auto bg-blue-100 group-hover:bg-blue-200 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fas fa-share-alt text-blue-600 text-xl"></i>
+                                </div>
+                                <p class="font-semibold text-gray-800 text-sm">Compartir</p>
+                                <p class="text-xs text-gray-500">Enviar enlace</p>
+                            </button>
+
+                            <button class="p-4 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all text-center group">
+                                <div class="w-12 h-12 mx-auto bg-green-100 group-hover:bg-green-200 rounded-full flex items-center justify-center mb-3">
+                                    <i class="fas fa-download text-green-600 text-xl"></i>
+                                </div>
+                                <p class="font-semibold text-gray-800 text-sm">Descargar</p>
+                                <p class="text-xs text-gray-500">Guardar video</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-6">
+
+                    <!-- Activity Feed -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-history text-purple-600 mr-2"></i>
+                            Actividad Reciente
+                        </h3>
+
+                        <div class="activity-timeline relative pl-12 space-y-4">
+                            <template x-for="(activity, index) in activities" :key="index">
+                                <div class="timeline-item relative">
+                                    <div class="bg-gray-50 rounded-lg p-3">
+                                        <div class="flex items-start space-x-2">
+                                            <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+                                                 :class="{
+                                                     'bg-green-100': activity.type === 'join',
+                                                     'bg-red-100': activity.type === 'leave',
+                                                     'bg-blue-100': activity.type === 'record',
+                                                     'bg-orange-100': activity.type === 'alert'
+                                                 }">
+                                                <i class="text-sm"
+                                                   :class="{
+                                                       'fas fa-user-plus text-green-600': activity.type === 'join',
+                                                       'fas fa-user-minus text-red-600': activity.type === 'leave',
+                                                       'fas fa-record-vinyl text-blue-600': activity.type === 'record',
+                                                       'fas fa-exclamation-triangle text-orange-600': activity.type === 'alert'
+                                                   }"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-semibold text-gray-800" x-text="activity.user"></p>
+                                                <p class="text-xs text-gray-500" x-text="activity.location"></p>
+                                                <p class="text-xs text-gray-400 mt-1" x-text="activity.time"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <button class="w-full mt-4 py-2 text-purple-600 hover:bg-purple-50 rounded-xl transition-colors font-medium text-sm">
+                            Ver todo el historial
+                        </button>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
+                        <h3 class="text-lg font-bold mb-4 flex items-center">
+                            <i class="fas fa-chart-pie mr-2"></i>
+                            Estadísticas de Hoy
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between pb-3 border-b border-purple-400/30">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-video"></i>
+                                    <span class="text-sm">Horas transmitidas</span>
+                                </div>
+                                <span class="font-bold">24.5h</span>
+                            </div>
+
+                            <div class="flex items-center justify-between pb-3 border-b border-purple-400/30">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-camera"></i>
+                                    <span class="text-sm">Capturas realizadas</span>
+                                </div>
+                                <span class="font-bold">145</span>
+                            </div>
+
+                            <div class="flex items-center justify-between pb-3 border-b border-purple-400/30">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-users"></i>
+                                    <span class="text-sm">Pico de espectadores</span>
+                                </div>
+                                <span class="font-bold">312</span>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-download"></i>
+                                    <span class="text-sm">Descargas</span>
+                                </div>
+                                <span class="font-bold">28</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network Status -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-network-wired text-green-600 mr-2"></i>
+                            Estado de Red
+                        </h3>
+
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-600">Ancho de banda</span>
+                                    <span class="text-sm font-semibold text-green-600">Excelente</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-600">Latencia</span>
+                                    <span class="text-sm font-semibold text-blue-600">45ms</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-600">Calidad de stream</span>
+                                    <span class="text-sm font-semibold text-purple-600">FHD</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" style="width: 95%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-green-50 rounded-xl flex items-center text-sm text-green-700">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Todas las conexiones estables
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+</html>
